@@ -1,7 +1,9 @@
 (ns sc-tutorial-translations.tutorial3
-  [:require [overtone.live :refer :all]])
+  [:require [overtone.core :refer :all]])
 
-(defsynth pulsetest "A super awesome synth that almost works the same as it would in SC"
+(connect-external-server)
+
+(defsynth pulsetest "A synth based on the example synth in Eli Fieldsteel's SuperCollider tutorial #3"
   [ampHz 4
    fund 40
    maxPartial 4
@@ -27,10 +29,10 @@
         freq2 (* (+ 1 (lf-pulse:kr 6)) freq2)
 
         sig1  (* amp1 (pulse:ar freq1 width))
-        sig2  (* amp1 (pulse:ar freq2 width))
+        sig2  (* amp2 (pulse:ar freq2 width))
 
-        sig1  (free-verb:ar sig1 0.7 0.8 0.25)
-        sig2  (free-verb:ar sig2 0.7 0.8 0.25)]
+        sig1  (free-verb:ar sig1 0.5 0.8 0.25)
+        sig2  (free-verb:ar sig2 0.5 0.8 0.25)]
     (do
       (out 0 sig1)
       (out 1 sig2))
@@ -41,9 +43,9 @@
 (def test_synth (pulsetest))
 
 ; not true to the tutorial here, just having a little fun
-(ctl test_synth :ampHz (/ 33.333333 3))
+(ctl test_synth :ampHz 5)
 (ctl test_synth :fund 242)
 (ctl test_synth :maxPartial 13.4)
-(ctl test_synth :width 0.754832)
+(ctl test_synth :width 1.754832)
 
 (stop)
