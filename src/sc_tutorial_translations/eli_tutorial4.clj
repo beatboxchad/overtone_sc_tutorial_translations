@@ -514,22 +514,32 @@
 ;   }.play
 ;   )
 
-;** FIXME how do I get the trigger to the ugen in the node? I must have to
-;implement it clojure-side. The above feature is an sclang thing
+;** The parameters in your synth form function are transformed into Control
+;** Ugens. SCLang will detect a param prepended with a 't_' and create a
+;** TrigControl ugen as opposed to a regular Control ugen, but Overtone does not
+;** have this feature. It doesn't really need it. Consider this excerpt from
+;** defsynth's docstring:
 
-(defsynth t_gate-env-demo [gate 0]
+;**     Params can also be given rates. By default, they are :kr, however another
+;**     rate can be specified by using either a pair of [default rate] or a map
+;**     with keys :default and rate: 
+;**
+;**     (defsynth foo [freq [440 :kr] gate [0 :tr]] ...)
+;**     (defsynth foo [freq {:default 440 :rate :kr}] ...)
+
+;** That first example is how you do it. You use this syntax to give your control
+;** a rate of :tr and it will become a TrigControl ugen. It will return to zero
+;** every time you hit it
+
+(defsynth t_gate-env-demo [t_gate [0 :tr]]
   (let 
-    [gated (trig gate)
-     env (env-gen (envelope [0 1 0.1 0] [0.5 1 2] [3 -3 0]) gated)
+    [env (env-gen (envelope [0 1 0.1 0] [0.5 1 2] [3 -3 0]) t_gate)
      sig (* env (pulse:ar (range-lin :in (lf-pulse:kr 8) :dstlo 600 :dsthi 900)))
      ]
     (out [0 1] sig)
-
     )
   )
 
-(def x (t_gate-env-demo))
-(kill x)
 ;t-underscore arguments, according to the SynthDef help file, 'will be made as
 ;a TrigControl. Setting the argument will create a control-rate impulse at the
 ;set value.' This means that if you set t_gate equal to 1, it will
@@ -540,8 +550,10 @@
 ;   x.set(\t_gate, 1)
 
 ;   x.free;
-(ctl x :gate 0)
-(ctl x :gate 1)
+
+;** See above commentary and Overtone synthdef for how it works in Overtone
+(def x (t_gate-env-demo))
+(ctl x :t_gate 1)
 
 (kill x)
 
@@ -558,12 +570,25 @@
 ;   }.play
 ;   )
 
+(defsynth t_gate-env-auto-on [t_gate [1 :tr]]
+  (let 
+    [env (env-gen (envelope [0 1 0.1 0] [0.5 1 2] [3 -3 0]) t_gate)
+     sig (* env (pulse:ar (range-lin :in (lf-pulse:kr 8) :dstlo 600 :dsthi 900)))
+     ]
+    (out [0 1] sig)
+    )
+  )
+
 ;and of course the envelope is still re-triggerable.
 
 ;   x.set(\t_gate, 1);
 
 ;   x.free;
 
+(def x (t_gate-env-auto-on))
+(ctl x :t_gate 1)
+
+(kill x)
 ;It's important to use the correct doneAction when dealing with a
 ;re-triggerable envelope. In this case, if we use doneAction:2, then the
 ;envelope will be retriggerable so long as it does not reach the end. If the
