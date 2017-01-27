@@ -607,6 +607,19 @@
 ;   }.play
 ;   )
 
+(defsynth t_gate-env-auto-on-free [t_gate [1 :tr]]
+  (let 
+    [env (env-gen (envelope [0 1 0.1 0] [0.5 1 2] [3 -3 0]) t_gate :action 2)
+     sig (* env (pulse:ar (range-lin :in (lf-pulse:kr 8) :dstlo 600 :dsthi 900)))
+     ]
+    (out [0 1] sig)
+    )
+  )
+
+(def x (t_gate-env-auto-on-free))
+(ctl x :t_gate 1)
+
+
 ;   x.set(\t_gate, 1);
 
 ;If you want a fixed-length envelope to be re-triggerable, it's best to use
@@ -636,6 +649,17 @@
 ;   }.play
 ;   )
 
+(defsynth adsr-demo-1 [gate 0]
+  (let [env (env-gen:kr (adsr), gate)
+        sig (* env (var-saw:ar (range-lin :in (sin-osc:kr 16) :dstlo 500 :dsthi 1000)))]
+        (out [0 1] sig)
+        )
+  )
+(def x (adsr-demo-1))
+
+(ctl x :gate 1)
+(ctl x :gate 0)
+
 ;gate is zero by default, so all we have to do is open the gate to trigger the
 ;adsr envelope
 
@@ -651,6 +675,7 @@
 ;be retriggered.
 
 ;   x.free;
+(kill x)
 
 ;Notice that it makes less sense to use a t-underscore argument for a gate when
 ;dealing with a sustainable envelope. If we were to use a trigger argument,
@@ -689,7 +714,13 @@
 ;   x.set(\gate, 1);
 ;   x.set(\gate, 0);
 
-;Last, here's an example of using a second adsr envelope to control the frequency modulation of the oscillator sound source. I'll make use of EnvGen's 3rd and 4th arguments, levelScale and levelBias, which are almost exactly like mul and add. I'll increase the attack time of the frequency control so that the effect is more audible. Also, since these two envelopes have the same gate argument and the same release time, they will end simultaneously, so it doesn't matter which envelope has the doneAction:2
+;Last, here's an example of using a second adsr envelope to control the
+;frequency modulation of the oscillator sound source. I'll make use of EnvGen's
+;3rd and 4th arguments, levelScale and levelBias, which are almost exactly like
+;mul and add. I'll increase the attack time of the frequency control so that
+;the effect is more audible. Also, since these two envelopes have the same gate
+;argument and the same release time, they will end simultaneously, so it
+;doesn't matter which envelope has the doneAction:2
 
 ;   (
 ;   x = {
@@ -703,6 +734,21 @@
 
 ;   x.set(\gate, 1);
 ;   x.set(\gate, 0);
+
+(defsynth final-example [gate 0]
+  (let [env (env-gen:kr (adsr) gate :action 2)
+        freq (env-gen:kr (adsr 1) gate :level-scale 200 :level-bias 0.1)
+        sig (* env (var-saw (range-lin :in (sin-osc:ar freq) :dstlo 300 :dsthi 500)))
+        ]
+    (out [0 1] sig)
+    )
+  )
+
+;** The envelope sounds slightly different in the SC version. I'm not gonna
+;** chase it right now.
+(def x (final-example))
+(ctl x :gate 1)
+(ctl x :gate 0)
 
 ;In the Env help file, you can find many other class methods in addition to
 ;.new and .adsr. For fixed-duration envelopes, there's a triangle shape, a
